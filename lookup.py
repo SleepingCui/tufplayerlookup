@@ -5,7 +5,6 @@ import time
 BASE_URL = "https://api.tuforums.com"
 count = 0
 api_time = 0
-pg_start = time.perf_counter()
 
 def fetchapi(url):
     global count
@@ -23,15 +22,16 @@ def fetchapi(url):
 
     return r.json()
 
-def search(name):
-    url = f"{BASE_URL}/v2/database/players/search/{name}"
+def search(query):
+    url = f"{BASE_URL}/v3/players/search?query={query}"
     print(url)
     data = fetchapi(url)
     return data.get("results", [])
 
-def find_player(query, by="id"):
+def find_player(query, by="discord"):
     offset = 0
     limit = 100
+
     while True:
         url = (
             f"{BASE_URL}/v3/players/leaderboard"
@@ -46,17 +46,18 @@ def find_player(query, by="id"):
         print(url)
         data = fetchapi(url)
         results = data.get("results", [])
-
         if not results: return None
+
         for player in results:
-            if by == "id":
-                if str(player["id"]) == str(query): return player
-            elif by == "discord":
-                discord = player.get("discord")
-                if (discord and discord.get("username") and discord["username"].lower() == query.lower()):
-                    return player
+            discord = player.get("discord")
+            if (discord and discord.get("username") and discord["username"].lower() == query.lower()):
+                return player
         offset += limit
 
+def get_player(pid):
+    url = f"{BASE_URL}/v3/players/{pid}"
+    print(url)
+    return fetchapi(url)
 
 def get_country_rank(player):
     country = player["country"]
@@ -87,13 +88,14 @@ def get_country_rank(player):
 def details(player, country_rank):
     discord = player.get("discord")
     td = player.get("topDiff")
+    print(player)
     print("\n" + "=" * 70)
     print(f"名称: {player.get('name')}")
     print(f"ID: {player.get('id')}")
     print(f"Discord: {discord.get('username') if discord else 'N/A'}")
     print(f"国家: {player.get('country')}")
     print()
-    print(f"全球排名: {player.get('rank', 'N/A')}")
+    print(f"全球排名: {player.get('rankedScoreRank', 'N/A')}")
     print(f"国家排名: {country_rank}")
     print()
     print(f"排位分: {player.get('rankedScore')}")
@@ -112,36 +114,32 @@ def details(player, country_rank):
     if td: print(f"最高通关难度: {td.get('name')} ({td.get('sortOrder')})")
 
 def stats():
-    global count, api_time, pg_start
-    total_time = time.perf_counter() - pg_start
-
-    print(f"tooked {count} requests, {total_time * 1000} ms")
-    print(f"api time: {api_time * 1000:.2f} ms")
+    global count, api_time
+    print(f"used {count} requests, {api_time * 1000:.2f} ms")
     print("\n"+ "=" * 70)
-
     count = 0
     api_time = 0
-    pg_start = time.perf_counter()
 
 def choose_player(results):
     if len(results) == 1: return results[0]
 
     print("\n找到多个玩家：\n")
 
-    for idx, item in enumerate(results, start=1):
-        player = item["player"]
-        print(f"[{idx}] {player['name']},ID={player['id']},Country={player['country']},RankedScore={item['rankedScore']:.2f}")
+    for idx, player in enumerate(results, start=1):
+        print(f"[{idx}] {player['name']} (ID={player['id']}, Country={player['country']}, RankedScore={player['rankedScore']:.2f})")
+
     while True:
         try:
             choice = int(input("\n选择玩家： "))
             if 1 <= choice <= len(results):
                 return results[choice - 1]
-        except: pass
+        except:
+            pass
+
         print("选择无效。")
 
 def run(player):
-    country_rank = get_country_rank(player)
-    details(player, country_rank)
+    details(player, get_country_rank(player))
     print()
     stats()
 
@@ -157,37 +155,54 @@ def main():
         mode = input("\n> ")
 
         player = None
+
         if mode == "1":
             name = input("玩家名：").strip()
+
             results = search(name)
+
             if not results:
                 print("未找到玩家。")
                 stats()
                 continue
 
-            selected = choose_player(results)
-            player = {
-                **selected,
-                **selected["player"]
-            }
+            player = choose_player(results)
+
+            if "rankedScoreRank" not in player:
+                player = get_player(player["id"])
+
             run(player)
 
         elif mode == "2":
             username = input("Discord 用户名：").strip()
-            player = find_player(username, by="discord")
-            if not player:
+
+            results = search(f"@{username}")
+
+            if not results:
                 print("未找到玩家。")
                 stats()
                 continue
+
+            player = choose_player(results)
+
+            if "rankedScoreRank" not in player:
+                player = get_player(player["id"])
+
             run(player)
 
         elif mode == "3":
             pid = input("玩家 ID：").strip()
-            player = find_player(pid, by="id")
+
+            try:
+                player = get_player(pid)
+            except:
+                player = None
+
             if not player:
                 print("未找到玩家。")
                 stats()
                 continue
+
             run(player)
 
         elif mode == "q":
