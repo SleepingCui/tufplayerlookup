@@ -88,7 +88,6 @@ def get_country_rank(player):
 def details(player, country_rank):
     discord = player.get("discord")
     td = player.get("topDiff")
-    print(player)
     print("\n" + "=" * 70)
     print(f"名称: {player.get('name')}")
     print(f"ID: {player.get('id')}")
