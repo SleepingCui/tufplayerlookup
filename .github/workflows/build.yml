@@ -47,9 +47,9 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.meta.outputs.tag }}
-        name: Release ${{ steps.meta.outputs.tag }}
+        name: ci-${{ steps.meta.outputs.tag }}
         body: |
-          Full Changelog: https://github.com/${{ github.repository }}/compare/${{ env.PREV_SHA }}...${{ env.SHORT_SHA }}
+          build with nuitka
         files: |
           lookup.exe
       env:
