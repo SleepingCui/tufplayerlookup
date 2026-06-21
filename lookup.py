@@ -14,16 +14,11 @@ def fetchapi(url):
     global api_time
     global PROXIES
 
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.2957.140"
-    }
-
     count += 1
     t0 = time.perf_counter()
-    r = requests.get(url, timeout=30, headers=headers, proxies=PROXIES)
+    r = requests.get(url, timeout=30, proxies=PROXIES)
     api_time += time.perf_counter() - t0
     r.raise_for_status()
-
     return r.json()
 
 def search(query):
@@ -39,31 +34,18 @@ def get_player(pid):
 
 def fetch_single_rank(player, sort_by, scope="global"):
     score = player.get(sort_by)
-    if score is None or score == 0:
-        return "?"
+    if score is None or score == 0: return "?"
 
     filters = {
         sort_by: [score, 999999999]
     }
     
-    if scope == "country":
-        filters["country"] = player["country"]
+    if scope == "country": filters["country"] = player["country"]
 
-    url = (
-        f"{BASE_URL}/v3/players/leaderboard"
-        f"?query="
-        f"&sortBy={sort_by}"
-        f"&order=desc"
-        f"&offset=0"
-        f"&limit=1"
-        f"&showBanned=hide"
-        f"&filters={requests.utils.quote(json.dumps(filters))}"
-    )
-
+    url = f"{BASE_URL}/v3/players/leaderboard?query=&sortBy={sort_by}&order=desc&offset=0&limit=1&showBanned=hide&filters={requests.utils.quote(json.dumps(filters))}"
     print(url)
     try:
-        data = fetchapi(url)
-        return data.get("count", "?")
+        return fetchapi(url).get("count", "?")
     except:
         return "?"
 
@@ -125,9 +107,7 @@ def details(player, ranks):
     print(f"首杀分: {player.get('wfPPScore')}")
     print(f"12K分: {player.get('score12K')}")
     print()
-    xacc = player.get('averageXacc')
-    xacc_str = f"{xacc * 100}%" if xacc is not None else "?"
-    print(f"平均XACC: {xacc_str}")
+    print(f"平均XACC: {player.get('averageXacc') * 100}%")
     print(f"U级通关数: {player.get('universalPassCount')}")
     print(f"总通关数: {player.get('totalPasses')}")
     print(f"世界首通数: {player.get('worldsFirstCount')}")
