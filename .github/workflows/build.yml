@@ -40,10 +40,8 @@ jobs:
         echo "PREV_SHA=${PREV_SHA}" >> $GITHUB_ENV
 
     - name: Build with Nuitka
-      env:
-        NUITKA_ALLOW_NON_INTERACTIVE: "true"
       run: |
-        python -m nuitka --onefile --main="lookup.py"
+        python -m nuitka --onefile --assume-yes-for-downloads --main="lookup.py"
     - name: Create Release
       id: create_release
       uses: softprops/action-gh-release@v2
