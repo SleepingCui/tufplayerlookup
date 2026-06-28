@@ -158,9 +158,12 @@ class TUFScoreCalculator:
         is_marathon = difficulty.get("name") == "Marathon"
         speed_mod = self.calculate_speed_modifier(speed, is_marathon)
         
-        final_score = max(0, base_score * multiplier * speed_mod)
+        # final_score = max(0, base_score * multiplier * speed_mod)
+        final_score = base_score * multiplier * speed_mod
         if misses == 0: final_score *= 1.1
-        if is_no_hold_tap: final_score *= 0.95
+        if is_no_hold_tap: final_score *= 0.9
+        
+        final_score = max(base_score / 2, final_score)
         
         return {
             "accuracy": accuracy,

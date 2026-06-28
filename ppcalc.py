@@ -113,8 +113,9 @@ def handle_pp_calc():
     
     result = calculator.calculate_score(level_data, accuracy, misses, speed, no_hold)
     
+    print()
     print(f"XACC: {result['accuracy_pct']}%")
-    print(f"基础分: {result['base_score']} ({result['base_source']})")
+    print(f"基础分: {result['base_score']}")
     print(f"分数倍率: {result['multiplier']}x")
     print(f"速度修正: {result['speed_mod']}x")
     print(f"PP分: {result['score']}")
